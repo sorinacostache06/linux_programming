@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
                 printf("Child %d\n", getpid());
                 if (execl("/home/sacostache/Documents/work/linux-programming/ex3/reader", "reader", NULL) == -1)
                     printf("can not open exec prog \n");
-                for(;;);
                 break;
             default:
                 // while (done) {
