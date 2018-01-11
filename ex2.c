@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define BUF_SIZE 100
 
@@ -51,16 +52,17 @@ int main(int argc, char *argv[])
         return -1;
     }
     
-    srand(time(NULL));
     for (int i = 0; i < n; i++) {
         switch (fork()) {
             case -1: 
-                printf("error: fork %d exit\n", i);
+                printf("Error number is : %d\n", errno);
+                printf("Error description is : %s\n",strerror(errno));
                 return -1;
             case 0:
                 if (close(pfd[0]) == -1) 
                     printf("error: can not close read pipe\n");
-                
+                time_t t;
+                srand((int)time(&t) % getpid());
                 r = rand()%1000 + 100;
                 while (isprime(r))
                     r = rand()%1000 + 100; 
@@ -75,7 +77,8 @@ int main(int argc, char *argv[])
                 strcat(message, " generate prime number: ");
                 strcat(message, str);
                 strcat(message, "\n");
-                if ( write(pfd[1], message, BUF_SIZE) == -1)
+                int len = strlen(message);
+                if ( write(pfd[1], message, len) != len)
                     printf("error pipe: can not write\n");
                 
                 if (close(pfd[1]) == -1)
@@ -85,6 +88,7 @@ int main(int argc, char *argv[])
                 if (read(pfd[0], buff, BUF_SIZE) == -1)
                     printf("error: parent can not read from pipe\n");
                 else printf("%s\n", buff);
+                wait(NULL);
                 break;
         }
     }
