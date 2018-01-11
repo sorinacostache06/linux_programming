@@ -6,7 +6,7 @@
 #include <time.h>
 #include <semaphore.h>
 
-#define GEN_TIME 1000000
+#define GEN_TIME 100
 #define MAX_BUFF 1000
 
 int counter, r;
@@ -18,6 +18,7 @@ sem_t prod, cons;
 
 int isprime(int n)
 {
+    // sleep(10);
     int i = 3;
     if (r < 2) 
         return -1;
@@ -54,7 +55,7 @@ int remove_item(int *item)
 
 void *producer(void *arg)
 {
-    for (int i = 0; i <= 10; i++) {
+    for (int i = 0; i <= 5; i++) {
         sem_wait(&cons);
         pthread_mutex_lock(&mutex);
         
