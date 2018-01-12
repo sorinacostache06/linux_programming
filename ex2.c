@@ -12,6 +12,7 @@
 
 int isprime(int r)
 {
+    sleep(10);
     int i = 3;
     if (r < 2) 
         return -1;
@@ -29,7 +30,7 @@ int isprime(int r)
 
 int main(int argc, char *argv[])
 {
-    int pfd[2], n, r;
+    int pfd[2], n, r, childPid, status;
     char buff[BUF_SIZE];
     char str1[BUF_SIZE];
 
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
     }
     
     for (int i = 0; i < n; i++) {
-        switch (fork()) {
+        switch (childPid = fork()) {
             case -1: 
                 printf("Error number is : %d\n", errno);
                 printf("Error description is : %s\n",strerror(errno));
@@ -67,28 +68,31 @@ int main(int argc, char *argv[])
                 while (isprime(r))
                     r = rand()%1000 + 100; 
                
-                char str[10], str2[10];
-                sprintf(str, "%d", r);
-                sprintf(str2, "%d", getpid());
+                char str_prime[10], str_pid[10];
+                sprintf(str_prime, "%d", r);
+                sprintf(str_pid, "%d", getpid());
 
                 char message[100];
                 strcat(message, "PID: ");
-                strcat(message, str2);
+                strcat(message, str_pid);
                 strcat(message, " generate prime number: ");
-                strcat(message, str);
+                strcat(message, str_prime);
                 strcat(message, "\n");
                 int len = strlen(message);
-                if ( write(pfd[1], message, len) != len)
+                if (write(pfd[1], message, len) != len)
                     printf("error pipe: can not write\n");
                 
                 if (close(pfd[1]) == -1)
                     printf("error: can not close write pipe\n");
                  _exit(EXIT_SUCCESS);
             default:
+                while (waitpid(childPid, &status, 0) == -1) {
+                    status = -1;
+                    break;
+                }
                 if (read(pfd[0], buff, BUF_SIZE) == -1)
                     printf("error: parent can not read from pipe\n");
                 else printf("%s\n", buff);
-                wait(NULL);
                 break;
         }
     }
@@ -98,6 +102,6 @@ int main(int argc, char *argv[])
    
     if (close(pfd[0]) == -1)
         printf("error: can not close read pipe\n");
-
+    
     _exit(EXIT_SUCCESS);
 }
