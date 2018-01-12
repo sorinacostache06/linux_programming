@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     int r, fd;
     pid_t pid;
     char *path;
+    pthread_mutex_init(&mutex, NULL);
 
     if (argc < 2){
         printf("error: no arguments\n");
@@ -29,8 +30,6 @@ int main(int argc, char *argv[])
     }
 
     path = argv[1];
-    printf("path name: %s\n", path);
-    return 0;
 
     fd = shm_open("my_region", O_CREAT | O_RDWR, S_IRUSR | S_IRWXU);
     
@@ -48,26 +47,25 @@ int main(int argc, char *argv[])
         
     strcpy(addr->buf,"");
 
-    // for (int i = 0; i < 3; i++) {
-    //     switch (pid = fork()) {
-    //         case -1:
-    //             printf("error: fork %d exit\n", i);
-    //             return -1;
-    //         case 0:
-    //             if (execl("/home/sacostache/Documents/work/linux-programming/ex3/reader", "reader", NULL) == -1)
-    //                 printf("can not open exec prog \n");
-    //             break;
-    //         default:
-    //             for (int i = 0; i < 10; i++) {
-    //                 sleep(1);
-    //                 pthread_mutex_lock(&mutex);
-    //                 put_randdata();
-    //                 pthread_mutex_unlock(&mutex);
-    //                 kill(pid, SIGUSR1);
-    //             }
-    //             break;
-    //     }
-    // }
+    for (int i = 0; i < 3; i++) {
+        switch (pid = fork()) {
+            case -1:
+                printf("error: fork %d exit\n", i);
+                return -1;
+            case 0:
+                if (execl("/home/sacostache/Documents/work/linux-programming/ex3/reader", "reader", NULL) == -1)
+                    printf("can not open exec prog \n");
+                break;
+            default:
+                break;
+        }
+    }
 
-
+    while(1) {
+        sleep(1);
+        pthread_mutex_lock(&mutex);
+        put_randdata();
+        pthread_mutex_unlock(&mutex);
+        kill(pid, SIGUSR1);
+    }
 }
