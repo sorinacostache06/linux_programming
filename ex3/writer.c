@@ -1,5 +1,10 @@
 #include "shared_resource.h"
 #include <errno.h>
+#include <wait.h>
+
+#define MAX_PID 100
+
+int pids[100];
 
 void put_randdata()
 {
@@ -16,8 +21,7 @@ void put_randdata()
 
 int main(int argc, char *argv[])
 {
-    int r, fd;
-    pid_t pid;
+    int fd;
     char *path;
     pthread_mutex_init(&mutex, NULL);
 
@@ -48,12 +52,13 @@ int main(int argc, char *argv[])
     strcpy(addr->buf,"");
 
     for (int i = 0; i < 3; i++) {
-        switch (pid = fork()) {
+        switch (pids[i] = fork()) {
             case -1:
-                printf("error: fork %d exit\n", i);
+                printf("Error number is : %d\n", errno);
+                printf("Error description is : %s\n",strerror(errno));
                 return -1;
             case 0:
-                if (execl("/home/sacostache/Documents/work/linux-programming/ex3/reader", "reader", NULL) == -1)
+                if (execl(path, "reader", NULL) == -1)
                     printf("can not open exec prog \n");
                 break;
             default:
@@ -66,6 +71,14 @@ int main(int argc, char *argv[])
         pthread_mutex_lock(&mutex);
         put_randdata();
         pthread_mutex_unlock(&mutex);
-        kill(pid, SIGUSR1);
+        for (int i = 0; i < 3; i++)
+            kill(pids[i], SIGUSR1);
     }
+    
+    int status;
+    for (int i = 0; i < 3; i++)
+        if (waitpid(pids[i], &status, 0) == -1) 
+            return -1;
+
+    return 0;
 }
