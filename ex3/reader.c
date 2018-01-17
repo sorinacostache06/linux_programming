@@ -22,6 +22,11 @@ int main(int argc, char *argv[])
        
     addr = mmap(NULL, sizeof(struct region), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     
+    if (addr == MAP_FAILED) {
+        printf("no error: %d %s \n", errno, strerror(errno));
+        return -1;
+    }
+    
     if (signal(SIGUSR1, parentSignal) == SIG_ERR) 
         printf("no error: %d %s \n", errno, strerror(errno));
     
