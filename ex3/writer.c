@@ -23,7 +23,10 @@ int main(int argc, char *argv[])
 {
     int fd;
     char *path;
-    pthread_mutex_init(&mutex, NULL);
+    if (pthread_mutex_init(&mutex, NULL) != 0) {
+        printf("no error: %d %s \n", errno, strerror(errno));
+        return -1;
+    }
 
     if (argc < 2){
         printf("error: no arguments\n");
@@ -35,27 +38,30 @@ int main(int argc, char *argv[])
 
     path = argv[1];
 
-    fd = shm_open("my_region", O_CREAT | O_RDWR, S_IRUSR | S_IRWXU);
-    
-    if (fd == -1) 
+    if ((fd = shm_open("my_region", O_CREAT | O_RDWR, S_IRUSR | S_IRWXU)) == -1) {
         printf("no error: %d %s \n", errno, strerror(errno));
+        return -1; 
+    }
 
-    if (ftruncate(fd, sizeof(struct region)) == -1)
+    if (ftruncate(fd, sizeof(struct region)) == -1) {
         printf("no error: %d %s \n", errno, strerror(errno));
+        return -1;
+    }
 
     addr = mmap(NULL, sizeof(struct region), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     close(fd);
 
-    if (addr == MAP_FAILED)
+    if (addr == MAP_FAILED) {
         printf("no error: %d %s \n", errno, strerror(errno));
+        return -1;
+    }
         
     strcpy(addr->buf,"");
 
     for (int i = 0; i < 3; i++) {
         switch (pids[i] = fork()) {
             case -1:
-                printf("Error number is : %d\n", errno);
-                printf("Error description is : %s\n",strerror(errno));
+                printf("no error: %d %s \n", errno, strerror(errno));
                 return -1;
             case 0:
                 if (execl(path, "reader", NULL) == -1)
@@ -68,11 +74,20 @@ int main(int argc, char *argv[])
 
     while(1) {
         sleep(1);
-        pthread_mutex_lock(&mutex);
+        if (pthread_mutex_lock(&mutex) != 0) {
+            printf("no error: %d %s \n", errno, strerror(errno));
+            return -1;
+        }
         put_randdata();
-        pthread_mutex_unlock(&mutex);
+        if (pthread_mutex_unlock(&mutex) != 0) {
+            printf("no error: %d %s \n", errno, strerror(errno));
+            return -1;
+        }
         for (int i = 0; i < 3; i++)
-            kill(pids[i], SIGUSR1);
+            if (kill(pids[i], SIGUSR1) == -1) {
+                printf("no error: %d %s \n", errno, strerror(errno));
+                return -1;
+            }
     }
     
     int status;

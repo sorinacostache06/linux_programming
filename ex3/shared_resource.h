@@ -21,3 +21,4 @@ struct region *addr;
 
 pthread_mutex_t mutex;
 
+int a;
