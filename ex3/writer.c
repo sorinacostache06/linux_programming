@@ -5,6 +5,8 @@
 #define MAX_PID 100
 
 int pids[100];
+sem_t *sem;
+struct region *addr;
 
 void put_randdata()
 {
@@ -23,9 +25,10 @@ int main(int argc, char *argv[])
 {
     int fd;
     char *path;
-    if (pthread_mutex_init(&mutex, NULL) != 0) {
-        printf("no error: %d %s \n", errno, strerror(errno));
-        return -1;
+
+    if ((sem = sem_open("shared_semaphore2", O_CREAT, 0777, 1)) == SEM_FAILED) {
+        printf("Semaphore open no error: %d %s \n", errno, strerror(errno));
+        return -1; 
     }
 
     if (argc < 2){
@@ -74,15 +77,16 @@ int main(int argc, char *argv[])
 
     while(1) {
         sleep(1);
-        if (pthread_mutex_lock(&mutex) != 0) {
+        if (sem_wait(sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }
         put_randdata();
-        if (pthread_mutex_unlock(&mutex) != 0) {
+        if (sem_post(sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }
+
         for (int i = 0; i < 3; i++)
             if (kill(pids[i], SIGUSR1) == -1) {
                 printf("no error: %d %s \n", errno, strerror(errno));

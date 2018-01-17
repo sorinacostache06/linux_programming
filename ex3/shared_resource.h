@@ -8,17 +8,13 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <semaphore.h>
 
 #define BUF_SIZE 100000
-#define FLAG O_CREAT
 
 struct region {
     int cnt;
     char buf[BUF_SIZE];
 };
 
-struct region *addr;
-
-pthread_mutex_t mutex;
-
-int a;
+extern sem_t *sem;
