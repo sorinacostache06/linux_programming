@@ -8,10 +8,11 @@
 #include <sys/wait.h>
 
 #define GEN_TIME 100
-#define MAX_BUFF 1000
+#define MAX_BUFF 10
 
 int counter, r;
 int buffer[MAX_BUFF];
+sem_t full, empty;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -19,8 +20,8 @@ sem_t prod, cons;
 
 int isprime(int n)
 {
+    sleep(5);
     int i = 3;
-    sleep(10);
     if (r < 2) 
         return -1;
     if (r == 2) 
@@ -37,6 +38,9 @@ int isprime(int n)
 
 int insert_item(int item)
 {
+    sem_wait(&empty);
+    pthread_mutex_lock(&mutex);
+
     if (counter < MAX_BUFF) {
         buffer[counter++] = item;
         return 0;
@@ -45,11 +49,15 @@ int insert_item(int item)
             wait(NULL);
         return 0;
     }
+    pthread_mutex_unlock(&mutex);
+    sem_post(&full);
     return -1;
 }
 
 int remove_item(int item)
 {
+    sem_wait(&full);
+    pthread_mutex_lock(&mutex);
     if (counter > 0) {
         item = buffer[0];
         counter--;
@@ -57,20 +65,20 @@ int remove_item(int item)
             buffer[i] = buffer[i+1];
         return 0;
     }
+    pthread_mutex_unlock(&mutex);
+    sem_post(&empty);
     return -1;
 }
 
 void *producer(void *arg)
 {
-    while(1) {      
+    while(1) {    
+    // for (int i = 0; i < 4; i++) {
         srand(time(NULL));
-        pthread_mutex_lock(&mutex);
         r = rand() % 1000 + 100;
-        if (insert_item(r) == -1)
-            pthread_exit(-1);
+        insert_item(r);
         for (int i = 0; i < counter; i++)
             printf("%d ", buffer[i]);
-        pthread_mutex_unlock(&mutex);
         printf("\n");
         usleep(GEN_TIME);
     }
@@ -81,19 +89,18 @@ void *consumer(void *arg)
 {        
     int item;
     while(1) {
+    // for (int i = 0; i < 4; i++) {
         while (counter == 0)
             wait(NULL);
 
-        pthread_mutex_lock(&mutex);
         item = buffer[0];
-        if (remove_item(item) == -1)
-            pthread_exit(-1);
-        pthread_mutex_unlock(&mutex);
+        remove_item(item);
 
         if (isprime(item) == -1)
             printf("Thread <%ld>: number %d, prime: [NO]\n", pthread_self(), item);
         else
             printf("Thread <%ld>: number %d, prime: [YES]\n", pthread_self(), item);
+
 
     }
     pthread_exit(0);
@@ -104,10 +111,13 @@ int main()
     pthread_t p, c;
     int s, s1;
 
-    if (sem_init(&prod, 0, 0) == -1)
-        printf("error init semaphore");
-    if (sem_init(&cons, 0, 1) == -1)
-        printf("error init semaphore");
+    pthread_mutex_init(&mutex, NULL);
+    sem_init(&empty, 0,100); // All of buffer is empty
+    sem_init(&full, 0, 0);
+    // if (sem_init(&prod, 0, 0) == -1)
+    //     printf("error init semaphore");
+    // if (sem_init(&cons, 0, 1) == -1)
+    //     printf("error init semaphore");
 
     s = pthread_create(&p, NULL, producer, NULL);
     if (s != 0) 
