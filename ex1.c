@@ -70,7 +70,7 @@ void *producer(void *arg)
         srand(time(NULL));
         r = rand() % 1000 + 100;
         insert_item(r);
-        sleep(1);
+        usleep(GEN_TIME);
     }
     pthread_exit(0);
 }
