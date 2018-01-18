@@ -31,14 +31,14 @@ int main(int argc, char *argv[])
     for (;;){
         printf("I am the child %d\n", getpid());
 
-        if (sem_wait(sem) == -1) {
+        if (sem_wait(&sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }
         if (write(STDOUT_FILENO, addr->buf, strlen(addr->buf)) < 0)
             printf("Chid cant read\n");
 
-        if (sem_post(sem) == -1) {
+        if (sem_post(&sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }

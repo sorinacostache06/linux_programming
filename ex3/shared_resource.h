@@ -17,4 +17,4 @@ struct region {
     char buf[BUF_SIZE];
 };
 
-extern sem_t *sem;
+extern sem_t sem;

@@ -5,7 +5,7 @@
 #define MAX_PID 100
 
 int pids[100];
-sem_t *sem;
+sem_t sem;
 struct region *addr;
 
 void put_randdata()
@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
     int fd;
     char *path;
 
-    if ((sem = sem_open("shared_semaphore2", O_CREAT, 0777, 1)) == SEM_FAILED) {
-        printf("Semaphore open no error: %d %s \n", errno, strerror(errno));
+    if (sem_init(&sem, 1, 1) == -1) {
+        printf("Semaphore init no error: %d %s \n", errno, strerror(errno));
         return -1; 
     }
 
@@ -77,12 +77,12 @@ int main(int argc, char *argv[])
 
     while(1) {
         sleep(1);
-        if (sem_wait(sem) == -1) {
+        if (sem_wait(&sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }
         put_randdata();
-        if (sem_post(sem) == -1) {
+        if (sem_post(&sem) == -1) {
             printf("no error: %d %s \n", errno, strerror(errno));
             return -1;
         }
