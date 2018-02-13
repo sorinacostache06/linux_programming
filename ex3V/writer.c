@@ -68,11 +68,6 @@ int main(int argc, char *argv[])
     int fd, semid;
     char *path;
 
-    // if (sem_init(&sem, 1, 1) == -1) {
-    //     printf("Semaphore init no error: %d %s \n", errno, strerror(errno));
-    //     return -1; 
-    // }
-
     if (argc < 2){
         printf("error: no arguments\n");
         return -1;
@@ -123,8 +118,10 @@ int main(int argc, char *argv[])
                 printf("no error: %d %s \n", errno, strerror(errno));
                 return -1;
             case 0:
-                if (execl(path, "reader", NULL) == -1)
+                if (execl(path, "reader", NULL) == -1) {
                     printf("can not open exec prog \n");
+                    return -1;                    
+                }
                 break;
             default:
                 break;
@@ -133,16 +130,8 @@ int main(int argc, char *argv[])
 
     while(1) {
         sleep(1);
-        // if (sem_wait(&sem) == -1) {
-        //     printf("no error: %d %s \n", errno, strerror(errno));
-        //     return -1;
-        // }
         reserveSem(semid, WRITE_SEM);
         put_randdata();
-        // if (sem_post(&sem) == -1) {
-        //     printf("no error: %d %s \n", errno, strerror(errno));
-        //     return -1;
-        // }
         releaseSem(semid, READ_SEM);
         for (int i = 0; i < 3; i++)
             if (kill(pids[i], SIGUSR1) == -1) {
