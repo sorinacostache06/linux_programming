@@ -60,8 +60,10 @@ int main(int argc, char *argv[])
                 printf("Error description is : %s\n",strerror(errno));
                 return -1;
             case 0:
-                if (close(pfd[0]) == -1) 
-                    printf("error: can not close read pipe\n");
+                if (close(pfd[0]) == -1) {
+                    printf("error %d can not close read pipe: %s\n", errno, strerror(errno));
+                    return -1;
+                }
                 time_t t;
                 srand((int)time(&t) % getpid());
                 r = rand()%1000 + 100;
@@ -79,29 +81,38 @@ int main(int argc, char *argv[])
                 strcat(message, str_prime);
                 strcat(message, "\n");
                 int len = strlen(message);
-                if (write(pfd[1], message, len) != len)
-                    printf("error pipe: can not write\n");
+                if (write(pfd[1], message, len) != len) {
+                    printf("error %d pipe can not write: %s\n", errno, strerror(errno));
+                    return -1;
+                }
                 
-                if (close(pfd[1]) == -1)
-                    printf("error: can not close write pipe\n");
+                if (close(pfd[1]) == -1){
+                    printf("error %d can not close read pipe: %s\n", errno, strerror(errno));
+                    return -1;
+                }
                  _exit(EXIT_SUCCESS);
             default:
-                while (waitpid(childPid, &status, 0) == -1) {
-                    status = -1;
-                    break;
-                }
-                if (read(pfd[0], buff, BUF_SIZE) == -1)
-                    printf("error: parent can not read from pipe\n");
-                else printf("%s\n", buff);
+                if (waitpid(childPid, &status, 0) == -1) {
+                    printf("error: waitpid failed!\n");
+                    return -1;
+                } 
+                if (read(pfd[0], buff, BUF_SIZE) == -1) {
+                    printf("error %d parent can not read from pipe: %s\n", errno, strerror(errno));
+                    return -1;
+                } else printf("%s\n", buff);
                 break;
         }
     }
 
-    if (close(pfd[1]) == -1)
-        printf("error: can not close write pipe\n");
+    if (close(pfd[1]) == -1) {
+        printf("error %d can not close pipe: %s\n", errno, strerror(errno));
+        return -1;
+    }
    
-    if (close(pfd[0]) == -1)
-        printf("error: can not close read pipe\n");
+    if (close(pfd[0]) == -1){
+        printf("error %d can not close pipe: %s\n", errno, strerror(errno));
+        return -1;
+    }
     
     _exit(EXIT_SUCCESS);
 }
