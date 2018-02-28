@@ -12,7 +12,6 @@
 #define LEFT (id + 4) % N
 #define RIGHT (id + 1) % N
 
-
 int state[N];
 int philos[N] = {0, 1, 2, 3, 4};
 
